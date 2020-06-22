@@ -29,7 +29,10 @@ code {
     '. . . .'
     '. . . equal'
     'zero zero . equal';
-  background-color: red;
+  background-color: black;
+  border-radius: 1rem;
+  overflow: hidden;
+  font-family: 'Roboto Mono', monospace;
 }
 
 .calc-child {
@@ -40,6 +43,10 @@ code {
   color: white;
   padding: 0.5rem;
   overflow: hidden;
+}
+
+.calc-child:hover {
+  border-color: orange;
 }
 
 .output {
