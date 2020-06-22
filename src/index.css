@@ -11,3 +11,64 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+#root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+#calculator {
+  border: solid 4px black;
+  display: grid;
+  grid-template-areas:
+    'output output output output'
+    'AC AC . .'
+    '. . . .'
+    '. . . .'
+    '. . . equal'
+    'zero zero . equal';
+  background-color: red;
+}
+
+.calc-child {
+  border: solid 1px black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  padding: 0.5rem;
+  overflow: hidden;
+}
+
+.output {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: flex-end;
+  background-color: black;
+  font-size: 1rem;
+}
+
+.output div:first-child {
+  color: orange;
+}
+
+.AC {
+  background-color: #753434;
+}
+
+.light {
+  background-color: #858585;
+}
+
+.dark {
+  background-color: #444444;
+}
+
+.equal {
+  background-color: #49406d;
+}
+
+/* base square 3.5rem */
