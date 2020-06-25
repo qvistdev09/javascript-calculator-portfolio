@@ -35,6 +35,14 @@ code {
   font-family: 'Roboto Mono', monospace;
 }
 
+.rounded-corner-right {
+  border-radius: 0 0 1rem 0;
+}
+
+.rounded-corner-left {
+  border-radius: 0 0 0 1rem;
+}
+
 .calc-child {
   border: solid 1px black;
   display: flex;
@@ -45,7 +53,7 @@ code {
   overflow: hidden;
 }
 
-.calc-child:hover {
+.hoverable:hover {
   border-color: orange;
 }
 
@@ -56,6 +64,10 @@ code {
   align-items: flex-end;
   background-color: black;
   font-size: 1rem;
+}
+
+.output-row {
+  flex: 1;
 }
 
 .output div:first-child {
