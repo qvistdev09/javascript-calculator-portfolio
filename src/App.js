@@ -400,7 +400,7 @@ class App extends React.Component {
 
 function CalcButton(props) {
   return (
-    <div
+    <button
       className={props.btnClass ? props.btnClass + ' calc-child' : 'calc-child'}
       style={
         props.gridArea ? { gridArea: props.gridArea } : { gridArea: 'initial' }
@@ -409,7 +409,7 @@ function CalcButton(props) {
       id={props.id}
     >
       {props.label}
-    </div>
+    </button>
   );
 }
 

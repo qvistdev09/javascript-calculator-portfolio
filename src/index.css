@@ -19,6 +19,16 @@ code {
   min-height: 100vh;
 }
 
+button,
+button:focus,
+button:active{
+	border:1px solid black;
+	outline:none;
+  padding:0;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 1rem;
+}
+
 #calculator {
   border: solid 4px black;
   display: grid;
