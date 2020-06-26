@@ -31,7 +31,6 @@ code {
     'zero zero . equal';
   background-color: black;
   border-radius: 1rem;
-  overflow: hidden;
   font-family: 'Roboto Mono', monospace;
 }
 
@@ -50,7 +49,6 @@ code {
   justify-content: center;
   color: white;
   padding: 0.5rem;
-  overflow: hidden;
 }
 
 .hoverable:hover {
@@ -68,10 +66,17 @@ code {
 
 .output-row {
   flex: 1;
+  text-align: right;
+  overflow-wrap: break-word;
+  white-space: normal;
+  display: flex;
+  word-wrap: break-word;
+  word-break: break-all;
 }
 
 .output div:first-child {
   color: orange;
+  font-size: 0.8rem;
 }
 
 .AC {

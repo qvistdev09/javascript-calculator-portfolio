@@ -13,13 +13,15 @@ class App extends React.Component {
       upperLast: '',
       showingResult: false,
     };
+    this.digitLimit = 24;
+    this.warningBlock = false;
     this.onClearPress = this.onClearPress.bind(this);
     this.onDigitPress = this.onDigitPress.bind(this);
     this.onZeroPress = this.onZeroPress.bind(this);
     this.onEqualPress = this.onEqualPress.bind(this);
     this.onOperatorPress = this.onOperatorPress.bind(this);
     this.onDecimalPress = this.onDecimalPress.bind(this);
-    this.addToState = this.addToState.bind(this);
+    this.numberLimit = this.numberLimit.bind(this);
   }
 
   onClearPress() {
@@ -33,7 +35,16 @@ class App extends React.Component {
   }
 
   onDigitPress(digit) {
-    if (this.state.showingResult) {
+    if (this.warningBlock) {
+      return;
+    }
+
+    if (this.state.lowerOutput.length >= this.digitLimit) {
+      this.numberLimit();
+      return;
+    }
+    // if showing result, build new number
+    else if (this.state.showingResult) {
       this.setState({
         showingResult: false,
         upperOutput: digit,
@@ -41,12 +52,15 @@ class App extends React.Component {
         upperLast: digit,
         decimals: false,
       });
+      // if lower field is zero only, replace zero instead of adding onto it
     } else if (this.state.lowerOutput === '0') {
-      this.setState({
-        upperOutput: digit,
+      this.setState((state) => ({
+        upperOutput:
+          state.upperOutput.slice(0, state.upperOutput.length - 1) + digit,
         lowerOutput: digit,
         upperLast: digit,
-      });
+      }));
+      // if lower field is math operator
     } else if (this.operatorRegex.test(this.state.upperLast)) {
       this.setState((state) => ({
         upperLast: digit,
@@ -55,15 +69,25 @@ class App extends React.Component {
         decimals: false,
       }));
     } else {
-      this.addToState('both', digit);
-      this.setState({
+      this.setState((state) => ({
+        upperOutput: state.upperOutput + digit,
+        lowerOutput: state.lowerOutput + digit,
         upperLast: digit,
-      });
+      }));
     }
   }
 
   onZeroPress() {
-    if (this.state.showingResult) {
+    if (this.warningBlock) {
+      return;
+    }
+
+    if (this.state.lowerOutput.length >= this.digitLimit) {
+      this.numberLimit();
+      return;
+    }
+    // if showing result, reset
+    else if (this.state.showingResult) {
       this.setState({
         showingResult: false,
         decimals: false,
@@ -71,8 +95,10 @@ class App extends React.Component {
         upperOutput: '',
         lowerOutput: '0',
       });
+      // if lower field is single zero, do nothing
     } else if (this.state.lowerOutput === '0') {
       return;
+      // if last input is math operator
     } else if (this.operatorRegex.test(this.state.upperLast)) {
       this.setState((state) => ({
         decimals: false,
@@ -81,30 +107,36 @@ class App extends React.Component {
         upperLast: '0',
       }));
     } else {
-      this.addToState('both', '0');
-      this.setState({
+      this.setState((state) => ({
+        upperOutput: state.upperOutput + '0',
+        lowerOutput: state.lowerOutput + '0',
         upperLast: '0',
-      });
+      }));
     }
   }
 
   onEqualPress() {
+    // only eval math string if it looks like an actual formula
     if (
       this.state.showingResult === false &&
-      /[0-9]+[+|\-|*|/][0-9]+/.test(this.state.upperOutput)
+      /[0-9]+[+|\-|*|/]+[0-9]+/.test(this.state.upperOutput)
     ) {
       this.setState((state) => ({
         // eslint-disable-next-line
         lowerOutput: Math.round(eval(state.upperOutput) * 10000000) / 10000000,
         decimals: false,
-        // eslint-disable-next-line
-        upperOutput: state.upperOutput + '=' + Math.round(eval(state.upperOutput) * 10000000) / 10000000,
+        upperOutput:
+          state.upperOutput +
+          '=' +
+          // eslint-disable-next-line
+          Math.round(eval(state.upperOutput) * 10000000) / 10000000,
         showingResult: true,
       }));
     }
   }
 
   onOperatorPress(operator) {
+    // if showing result, build new formula with old result as first value
     if (this.state.showingResult) {
       this.setState((state) => ({
         upperOutput: state.lowerOutput + operator,
@@ -113,8 +145,10 @@ class App extends React.Component {
         decimals: false,
         showingResult: false,
       }));
+      // if pressing same operator twice, do nothing
     } else if (this.state.upperLast === operator) {
       return;
+      // if pressing minus and last input was operator but not minus, allow minus as second operator
     } else if (
       operator === '-' &&
       this.operatorRegex.test(this.state.upperLast) &&
@@ -124,7 +158,9 @@ class App extends React.Component {
         upperOutput: state.upperOutput + operator,
         lowerOutput: operator,
         upperLast: operator,
+        decimals: false,
       }));
+      // if pressing operator and last input was different operator, switch to new operator
     } else if (
       this.operatorRegex.test(this.state.upperLast) &&
       this.operatorRegex.test(
@@ -137,24 +173,36 @@ class App extends React.Component {
         upperOutput:
           state.upperOutput.slice(0, state.upperOutput.length - 1) + operator,
         upperLast: operator,
+        decimals: false,
       }));
     } else if (this.state.lowerOutput === '0') {
       this.setState({
         upperOutput: '0' + operator,
         lowerOutput: operator,
         upperLast: operator,
+        decimals: false,
       });
     } else if (/[0-9]/.test(this.state.upperLast)) {
       this.setState((state) => ({
         upperLast: operator,
         upperOutput: state.upperOutput + operator,
         lowerOutput: operator,
+        decimals: false,
       }));
     }
   }
 
   onDecimalPress() {
-    if (this.state.showingResult) {
+    if (this.warningBlock) {
+      return;
+    }
+
+    if (this.state.lowerOutput.length >= this.digitLimit) {
+      this.numberLimit();
+      return;
+    }
+    // if showing result and pressing decimal, start new number with 0.
+    else if (this.state.showingResult) {
       this.setState({
         upperLast: '.',
         upperOutput: '0.',
@@ -162,35 +210,48 @@ class App extends React.Component {
         decimals: true,
         showingResult: false,
       });
+      // do nothing if current number is already a decimal number
     } else if (this.state.decimals === true) {
       return;
+      // if last input is operator and pressing decimal, start next number with 0.
+    } else if (this.operatorRegex.test(this.state.upperLast)) {
+      this.setState((state) => ({
+        decimals: true,
+        upperLast: '.',
+        upperOutput: state.upperOutput + '0.',
+        lowerOutput: '0.',
+      }));
+    } else if (this.state.lowerOutput === '0') {
+      this.setState((state) => ({
+        upperOutput: state.upperOutput + '0.',
+        lowerOutput: '0.',
+        decimals: true,
+        upperLast: '.',
+      }));
     } else {
-      this.addToState('both', '.');
-      this.setState({ decimals: true, upperLast: '.' });
+      this.setState((state) => ({
+        upperOutput: state.upperOutput + '.',
+        lowerOutput: state.lowerOutput + '.',
+        decimals: true,
+        upperLast: '.',
+      }));
     }
   }
 
-  addToState(choice, input) {
-    switch (choice) {
-      case 'upper':
-        this.setState((state) => ({
-          upperOutput: state.upperOutput + input,
-        }));
-        break;
-      case 'lower':
-        this.setState((state) => ({
-          lowerOutput: state.lowerOutput + input,
-        }));
-        break;
-      case 'both':
-        this.setState((state) => ({
-          lowerOutput: state.lowerOutput + input,
-          upperOutput: state.upperOutput + input,
-        }));
-        break;
-      default:
-        return;
+  numberLimit() {
+    if (this.warningBlock) {
+      return;
     }
+
+    this.warningBlock = true;
+    const savedValue = this.state.lowerOutput;
+    this.setState({
+      lowerOutput: 'MAX DIGITS REACHED',
+    });
+    setTimeout(() => {
+      this.setState({ lowerOutput: savedValue });
+      this.warningBlock = false;
+    }, 1000);
   }
 
   render() {
@@ -199,7 +260,10 @@ class App extends React.Component {
         id="calculator"
         style={{
           gridTemplateColumns: 'repeat(4, ' + this.state.gridItemWidth + 'rem)',
-          gridTemplateRows: 'repeat(6, ' + this.state.gridItemHeight + 'rem)',
+          gridTemplateRows:
+            'minmax(4rem, max-content) repeat(5, ' +
+            this.state.gridItemHeight +
+            'rem)',
         }}
       >
         <OutputField
@@ -317,7 +381,7 @@ function OutputField(props) {
   return (
     <div className="calc-child output" style={{ gridArea: 'output' }}>
       <div className="output-row">{props.upper}</div>
-      <div className="outpot-row">{props.lower}</div>
+      <div className="output-row">{props.lower}</div>
     </div>
   );
 }
