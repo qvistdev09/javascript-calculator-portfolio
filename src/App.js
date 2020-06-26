@@ -160,8 +160,26 @@ class App extends React.Component {
         upperLast: operator,
         decimals: false,
       }));
-      // if pressing operator and last input was different operator, switch to new operator
-    } else if (
+    }
+    // if two operators are already inputted and user clicks third operator, switch to new operator only
+    else if (
+      this.operatorRegex.test(
+        this.state.upperOutput[this.state.upperOutput.length - 1]
+      ) &&
+      this.operatorRegex.test(
+        this.state.upperOutput[this.state.upperOutput.length - 2]
+      )
+    ) {
+      this.setState((state) => ({
+        upperOutput:
+          state.upperOutput.slice(0, state.upperOutput.length - 2) + operator,
+        lowerOutput: operator,
+        upperLast: operator,
+        decimals: false,
+      }));
+    }
+    // if pressing operator and last input was different operator, switch to new operator
+    else if (
       this.operatorRegex.test(this.state.upperLast) &&
       this.operatorRegex.test(
         this.state.upperOutput[this.state.upperOutput.length - 2]
@@ -275,88 +293,105 @@ class App extends React.Component {
           gridArea={'AC'}
           btnClass="AC hoverable"
           press={this.onClearPress}
+          id="clear"
         />
         <CalcButton
           label={'/'}
           btnClass="light hoverable"
           press={this.onOperatorPress}
+          id="divide"
         />
         <CalcButton
           label={'*'}
           btnClass="light hoverable"
           press={this.onOperatorPress}
+          id="multiply"
         />
         <CalcButton
           label={'7'}
           btnClass="dark hoverable"
           press={this.onDigitPress}
+          id="seven"
         />
         <CalcButton
           label={'8'}
           btnClass="dark hoverable"
           press={this.onDigitPress}
+          id="eight"
         />
         <CalcButton
           label={'9'}
           btnClass="dark hoverable"
           press={this.onDigitPress}
+          id="nine"
         />
         <CalcButton
           label={'-'}
           btnClass="light hoverable"
           press={this.onOperatorPress}
+          id="subtract"
         />
         <CalcButton
           label={'4'}
           btnClass="dark hoverable"
           press={this.onDigitPress}
+          id="four"
         />
         <CalcButton
           label={'5'}
           btnClass="dark hoverable"
           press={this.onDigitPress}
+          id="five"
         />
         <CalcButton
           label={'6'}
           btnClass="dark hoverable"
           press={this.onDigitPress}
+          id="six"
         />
         <CalcButton
           label={'+'}
           btnClass="light hoverable"
           press={this.onOperatorPress}
+          id="add"
         />
         <CalcButton
           label={'1'}
           btnClass="dark hoverable"
           press={this.onDigitPress}
+          id="one"
         />
         <CalcButton
           label={'2'}
           btnClass="dark hoverable"
           press={this.onDigitPress}
+          id="two"
         />
         <CalcButton
           label={'3'}
           btnClass="dark hoverable"
           press={this.onDigitPress}
+          id="three"
         />
         <CalcButton
           label={'='}
           gridArea="equal"
           btnClass="equal hoverable rounded-corner-right"
           press={this.onEqualPress}
+          id="equals"
         />
         <CalcButton
           label={'0'}
           gridArea="zero"
           btnClass="dark hoverable rounded-corner-left"
           press={this.onZeroPress}
+          id="zero"
         />
         <CalcButton
           label={'.'}
           btnClass="dark hoverable"
           press={this.onDecimalPress}
+          id="decimal"
         />
       </div>
     );
@@ -371,6 +406,7 @@ function CalcButton(props) {
         props.gridArea ? { gridArea: props.gridArea } : { gridArea: 'initial' }
       }
       onClick={() => props.press(props.label)}
+      id={props.id}
     >
       {props.label}
     </div>
@@ -381,7 +417,9 @@ function OutputField(props) {
   return (
     <div className="calc-child output" style={{ gridArea: 'output' }}>
       <div className="output-row">{props.upper}</div>
-      <div className="output-row">{props.lower}</div>
+      <div className="output-row" id="display">
+        {props.lower}
+      </div>
     </div>
   );
 }
