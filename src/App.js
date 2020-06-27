@@ -6,7 +6,7 @@ class App extends React.Component {
     this.state = {
       gridItemWidth: 4,
       gridItemHeight: 4,
-      upperOutput: ' ',
+      upperOutput: '',
       lowerOutput: '0',
       decimals: false,
       upperLast: '',
@@ -31,8 +31,11 @@ class App extends React.Component {
           category === 'digit' ||
           category === 'decimal' ||
           input === '-' ||
-          category === 'equals'
+          category === 'equals' ||
+          category === 'zero'
         ) {
+          return true;
+        } else if (category === 'operator' && this.state.upperOutput !== '') {
           return true;
         } else {
           return false;
@@ -152,7 +155,14 @@ class App extends React.Component {
         });
         break;
       case 'zero':
-        if (this.state.calcState === 'result') {
+        if (this.state.calcState === 'zero') {
+          this.setState({
+            calcResult: 'zero',
+            upperLast: '0',
+            upperOutput: '0',
+            lowerOutput: '0',
+          });
+        } else if (this.state.calcState === 'result') {
           this.setState({
             calcState: 'zero',
             upperLast: '0',
