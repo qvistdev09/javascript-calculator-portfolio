@@ -77,7 +77,8 @@ class App extends React.Component {
         if (
           category === 'digit' ||
           category === 'operator' ||
-          category === 'decimal'
+          category === 'decimal' ||
+          category === 'zero'
         ) {
           return true;
         } else {
@@ -151,7 +152,15 @@ class App extends React.Component {
         });
         break;
       case 'zero':
-        if (this.state.calcState === 'operator') {
+        if (this.state.calcState === 'result') {
+          this.setState({
+            calcState: 'zero',
+            upperLast: '0',
+            upperOutput: '0',
+            lowerOutput: '0',
+            decimals: false,
+          });
+        } else if (this.state.calcState === 'operator') {
           this.setState((state) => ({
             calcState: 'zero',
             upperLast: '0',
