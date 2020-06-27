@@ -3,7 +3,6 @@ import React from 'react';
 class App extends React.Component {
   constructor(props) {
     super(props);
-    this.operatorRegex = /(\*|\/|\+|-)/;
     this.state = {
       gridItemWidth: 4,
       gridItemHeight: 4,
@@ -11,248 +10,313 @@ class App extends React.Component {
       lowerOutput: '0',
       decimals: false,
       upperLast: '',
-      showingResult: false,
+      calcState: 'zero',
     };
     this.digitLimit = 24;
     this.warningBlock = false;
-    this.onClearPress = this.onClearPress.bind(this);
-    this.onDigitPress = this.onDigitPress.bind(this);
-    this.onZeroPress = this.onZeroPress.bind(this);
-    this.onEqualPress = this.onEqualPress.bind(this);
-    this.onOperatorPress = this.onOperatorPress.bind(this);
-    this.onDecimalPress = this.onDecimalPress.bind(this);
+    this.isValid = this.isValid.bind(this);
+    this.onCalcButtonPress = this.onCalcButtonPress.bind(this);
+    this.categorizeInput = this.categorizeInput.bind(this);
     this.numberLimit = this.numberLimit.bind(this);
   }
 
-  onClearPress() {
-    this.setState({
-      upperOutput: '',
-      lowerOutput: '0',
-      decimals: false,
-      upperLast: '',
-      showingResult: false,
-    });
+  isValid(input, category) {
+    if (input === 'AC') {
+      return true;
+    }
+
+    switch (this.state.calcState) {
+      case 'zero':
+        if (
+          category === 'digit' ||
+          category === 'decimal' ||
+          input === '-' ||
+          category === 'equals'
+        ) {
+          return true;
+        } else {
+          return false;
+        }
+      case 'operator':
+        if (
+          category === 'digit' ||
+          category === 'zero' ||
+          category === 'operator' ||
+          category === 'decimal'
+        ) {
+          return true;
+        } else {
+          return false;
+        }
+      case 'digit':
+        if (
+          category === 'digit' ||
+          category === 'zero' ||
+          category === 'operator'
+        ) {
+          return true;
+        } else if (category === 'decimal' && this.state.decimals === false) {
+          return true;
+        } else if (category === 'equals') {
+          return true;
+        } else {
+          return false;
+        }
+      case 'decimal':
+        if (
+          category === 'digit' ||
+          category === 'zero' ||
+          category === 'operator' ||
+          category === 'equals'
+        ) {
+          return true;
+        } else {
+          return false;
+        }
+      case 'result':
+        if (
+          category === 'digit' ||
+          category === 'operator' ||
+          category === 'decimal'
+        ) {
+          return true;
+        } else {
+          return false;
+        }
+      default:
+        return false;
+    }
   }
 
-  onDigitPress(digit) {
+  categorizeInput(input) {
+    switch (input) {
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+        return 'digit';
+      case '0':
+        return 'zero';
+      case '.':
+        return 'decimal';
+      case '=':
+        return 'equals';
+      case '*':
+      case '/':
+      case '-':
+      case '+':
+        return 'operator';
+      case 'AC':
+        return 'AC';
+      default:
+        return 'unrecognized';
+    }
+  }
+
+  onCalcButtonPress(btn) {
     if (this.warningBlock) {
       return;
     }
 
-    if (this.state.lowerOutput.length >= this.digitLimit) {
-      this.numberLimit();
-      return;
-    }
-    // if showing result, build new number
-    else if (this.state.showingResult) {
-      this.setState({
-        showingResult: false,
-        upperOutput: digit,
-        lowerOutput: digit,
-        upperLast: digit,
-        decimals: false,
-      });
-      // if lower field is zero only, replace zero instead of adding onto it
-    } else if (this.state.lowerOutput === '0') {
-      this.setState((state) => ({
-        upperOutput:
-          state.upperOutput.slice(0, state.upperOutput.length - 1) + digit,
-        lowerOutput: digit,
-        upperLast: digit,
-      }));
-      // if lower field is math operator
-    } else if (this.operatorRegex.test(this.state.upperLast)) {
-      this.setState((state) => ({
-        upperLast: digit,
-        lowerOutput: digit,
-        upperOutput: state.upperOutput + digit,
-        decimals: false,
-      }));
-    } else {
-      this.setState((state) => ({
-        upperOutput: state.upperOutput + digit,
-        lowerOutput: state.lowerOutput + digit,
-        upperLast: digit,
-      }));
-    }
-  }
-
-  onZeroPress() {
-    if (this.warningBlock) {
-      return;
-    }
+    const category = this.categorizeInput(btn);
 
     if (this.state.lowerOutput.length >= this.digitLimit) {
-      this.numberLimit();
-      return;
+      if (
+        category === 'digit' ||
+        category === 'zero' ||
+        category === 'decimal'
+      ) {
+        this.numberLimit();
+        return;
+      }
     }
-    // if showing result, reset
-    else if (this.state.showingResult) {
-      this.setState({
-        showingResult: false,
-        decimals: false,
-        upperLast: '',
-        upperOutput: '',
-        lowerOutput: '0',
-      });
-      // if lower field is single zero, do nothing
-    } else if (this.state.lowerOutput === '0') {
-      return;
-      // if last input is math operator
-    } else if (this.operatorRegex.test(this.state.upperLast)) {
-      this.setState((state) => ({
-        decimals: false,
-        upperOutput: state.upperOutput + '0',
-        lowerOutput: '0',
-        upperLast: '0',
-      }));
-    } else {
-      this.setState((state) => ({
-        upperOutput: state.upperOutput + '0',
-        lowerOutput: state.lowerOutput + '0',
-        upperLast: '0',
-      }));
-    }
-  }
 
-  onEqualPress() {
-    // only eval math string if it looks like an actual formula
-    if (
-      this.state.showingResult === false &&
-      /[0-9]+[+|\-|*|/]+[0-9]+/.test(this.state.upperOutput)
-    ) {
-      this.setState((state) => ({
-        // eslint-disable-next-line
-        lowerOutput: Math.round(eval(state.upperOutput) * 10000000) / 10000000,
-        decimals: false,
-        upperOutput:
-          state.upperOutput +
-          '=' +
+    if (!this.isValid(btn, category)) {
+      return;
+    }
+
+    switch (category) {
+      case 'AC':
+        this.setState({
+          calcState: 'zero',
+          upperLast: '',
+          upperOutput: '',
+          lowerOutput: '0',
+          decimals: false,
+        });
+        break;
+      case 'zero':
+        if (this.state.calcState === 'operator') {
+          this.setState((state) => ({
+            calcState: 'zero',
+            upperLast: '0',
+            upperOutput: state.upperOutput + btn,
+            lowerOutput: btn,
+          }));
+        } else {
+          this.setState((state) => ({
+            calcState: 'digit',
+            upperLast: '0',
+            upperOutput: state.upperOutput + '0',
+            lowerOutput: state.lowerOutput + '0',
+          }));
+        }
+        break;
+      case 'digit':
+        if (this.state.calcState === 'result') {
+          this.setState({
+            calcState: 'digit',
+            upperLast: btn,
+            upperOutput: btn,
+            lowerOutput: btn,
+            decimals: false,
+          });
+        } else if (this.state.calcState === 'zero') {
+          this.setState((state) => ({
+            calcState: 'digit',
+            upperLast: btn,
+            upperOutput:
+              state.upperOutput.slice(0, state.upperOutput.length - 1) + btn,
+            lowerOutput: btn,
+          }));
+        } else if (this.state.calcState === 'operator') {
+          this.setState((state) => ({
+            calcState: 'digit',
+            upperLast: btn,
+            upperOutput: state.upperOutput + btn,
+            lowerOutput: btn,
+          }));
+        } else {
+          this.setState((state) => ({
+            calcState: 'digit',
+            upperLast: btn,
+            upperOutput: state.upperOutput + btn,
+            lowerOutput: state.lowerOutput + btn,
+          }));
+        }
+        break;
+      case 'operator':
+        if (this.state.calcState === 'result') {
+          const savedResult = this.state.lowerOutput;
+          this.setState({
+            calcState: 'operator',
+            upperLast: btn,
+            upperOutput: savedResult + btn,
+            lowerOutput: btn,
+            decimals: false,
+          });
+        } else if (this.state.calcState === 'operator') {
+          if (this.state.upperLast === btn) {
+            return;
+          } else if (this.state.upperLast !== '-' && btn === '-') {
+            this.setState((state) => ({
+              calcState: 'operator',
+              upperLast: btn,
+              upperOutput: state.upperOutput + btn,
+              lowerOutput: btn,
+              decimals: false,
+            }));
+          } else {
+            if (
+              /(\*|\/|\+|-)/.test(
+                this.state.upperOutput[this.state.upperOutput.length - 2]
+              )
+            ) {
+              this.setState((state) => ({
+                calcState: 'operator',
+                upperLast: btn,
+                upperOutput:
+                  state.upperOutput.slice(0, state.upperOutput.length - 2) +
+                  btn,
+                lowerOutput: btn,
+                decimals: false,
+              }));
+            } else {
+              this.setState((state) => ({
+                calcState: 'operator',
+                upperLast: btn,
+                upperOutput:
+                  state.upperOutput.slice(0, state.upperOutput.length - 1) +
+                  btn,
+                lowerOutput: btn,
+                decimals: false,
+              }));
+            }
+          }
+        } else {
+          this.setState((state) => ({
+            calcState: 'operator',
+            upperLast: btn,
+            upperOutput: state.upperOutput + btn,
+            lowerOutput: btn,
+            decimals: false,
+          }));
+        }
+        break;
+      case 'equals':
+        const calcResult =
           // eslint-disable-next-line
-          Math.round(eval(state.upperOutput) * 10000000) / 10000000,
-        showingResult: true,
-      }));
-    }
-  }
-
-  onOperatorPress(operator) {
-    // if showing result, build new formula with old result as first value
-    if (this.state.showingResult) {
-      this.setState((state) => ({
-        upperOutput: state.lowerOutput + operator,
-        lowerOutput: operator,
-        upperLast: operator,
-        decimals: false,
-        showingResult: false,
-      }));
-      // if pressing same operator twice, do nothing
-    } else if (this.state.upperLast === operator) {
-      return;
-      // if pressing minus and last input was operator but not minus, allow minus as second operator
-    } else if (
-      operator === '-' &&
-      this.operatorRegex.test(this.state.upperLast) &&
-      this.state.upperLast !== '-'
-    ) {
-      this.setState((state) => ({
-        upperOutput: state.upperOutput + operator,
-        lowerOutput: operator,
-        upperLast: operator,
-        decimals: false,
-      }));
-    }
-    // if two operators are already inputted and user clicks third operator, switch to new operator only
-    else if (
-      this.operatorRegex.test(
-        this.state.upperOutput[this.state.upperOutput.length - 1]
-      ) &&
-      this.operatorRegex.test(
-        this.state.upperOutput[this.state.upperOutput.length - 2]
-      )
-    ) {
-      this.setState((state) => ({
-        upperOutput:
-          state.upperOutput.slice(0, state.upperOutput.length - 2) + operator,
-        lowerOutput: operator,
-        upperLast: operator,
-        decimals: false,
-      }));
-    }
-    // if pressing operator and last input was different operator, switch to new operator
-    else if (
-      this.operatorRegex.test(this.state.upperLast) &&
-      this.operatorRegex.test(
-        this.state.upperOutput[this.state.upperOutput.length - 2]
-      ) !== true &&
-      this.state.upperLast !== operator
-    ) {
-      this.setState((state) => ({
-        lowerOutput: operator,
-        upperOutput:
-          state.upperOutput.slice(0, state.upperOutput.length - 1) + operator,
-        upperLast: operator,
-        decimals: false,
-      }));
-    } else if (this.state.lowerOutput === '0') {
-      this.setState({
-        upperOutput: '0' + operator,
-        lowerOutput: operator,
-        upperLast: operator,
-        decimals: false,
-      });
-    } else if (/[0-9]/.test(this.state.upperLast)) {
-      this.setState((state) => ({
-        upperLast: operator,
-        upperOutput: state.upperOutput + operator,
-        lowerOutput: operator,
-        decimals: false,
-      }));
-    }
-  }
-
-  onDecimalPress() {
-    if (this.warningBlock) {
-      return;
-    }
-
-    if (this.state.lowerOutput.length >= this.digitLimit) {
-      this.numberLimit();
-      return;
-    }
-    // if showing result and pressing decimal, start new number with 0.
-    else if (this.state.showingResult) {
-      this.setState({
-        upperLast: '.',
-        upperOutput: '0.',
-        lowerOutput: '0.',
-        decimals: true,
-        showingResult: false,
-      });
-      // do nothing if current number is already a decimal number
-    } else if (this.state.decimals === true) {
-      return;
-      // if last input is operator and pressing decimal, start next number with 0.
-    } else if (this.operatorRegex.test(this.state.upperLast)) {
-      this.setState((state) => ({
-        decimals: true,
-        upperLast: '.',
-        upperOutput: state.upperOutput + '0.',
-        lowerOutput: '0.',
-      }));
-    } else if (this.state.lowerOutput === '0') {
-      this.setState((state) => ({
-        upperOutput: state.upperOutput + '0.',
-        lowerOutput: '0.',
-        decimals: true,
-        upperLast: '.',
-      }));
-    } else {
-      this.setState((state) => ({
-        upperOutput: state.upperOutput + '.',
-        lowerOutput: state.lowerOutput + '.',
-        decimals: true,
-        upperLast: '.',
-      }));
+          Math.round(eval(this.state.upperOutput) * 10000000) / 10000000;
+        this.setState((state) => ({
+          calcState: 'result',
+          upperLast: '',
+          upperOutput: state.upperOutput + '=' + calcResult,
+          lowerOutput: calcResult,
+          decimals: false,
+        }));
+        break;
+      case 'decimal':
+        if (this.state.calcState === 'operator') {
+          this.setState((state) => ({
+            calcState: 'decimal',
+            upperLast: '.',
+            upperOutput: state.upperOutput + '0.',
+            lowerOutput: '0.',
+            decimals: true,
+          }));
+        } else if (this.state.calcState === 'result') {
+          this.setState({
+            calcState: 'decimal',
+            upperLast: '.',
+            upperOutput: '0.',
+            lowerOutput: '0.',
+            decimals: true,
+          });
+        } else if (this.state.calcState === 'zero') {
+          if (this.state.upperOutput === '') {
+            this.setState({
+              calcState: 'decimal',
+              upperLast: '.',
+              upperOutput: '0.',
+              lowerOutput: '0.',
+              decimals: true,
+            });
+          } else {
+            this.setState((state) => ({
+              calcState: 'decimal',
+              upperLast: '.',
+              upperOutput: state.upperOutput + btn,
+              lowerOutput: state.lowerOutput + btn,
+              decimals: true,
+            }));
+          }
+        } else {
+          this.setState((state) => ({
+            calcState: 'decimal',
+            upperLast: '.',
+            upperOutput: state.upperOutput + '.',
+            lowerOutput: state.lowerOutput + '.',
+            decimals: true,
+          }));
+        }
+        break;
+      default:
+        return;
     }
   }
 
@@ -292,105 +356,105 @@ class App extends React.Component {
           label={'AC'}
           gridArea={'AC'}
           btnClass="AC hoverable"
-          press={this.onClearPress}
+          press={this.onCalcButtonPress}
           id="clear"
         />
         <CalcButton
           label={'/'}
           btnClass="light hoverable"
-          press={this.onOperatorPress}
+          press={this.onCalcButtonPress}
           id="divide"
         />
         <CalcButton
           label={'*'}
           btnClass="light hoverable"
-          press={this.onOperatorPress}
+          press={this.onCalcButtonPress}
           id="multiply"
         />
         <CalcButton
           label={'7'}
           btnClass="dark hoverable"
-          press={this.onDigitPress}
+          press={this.onCalcButtonPress}
           id="seven"
         />
         <CalcButton
           label={'8'}
           btnClass="dark hoverable"
-          press={this.onDigitPress}
+          press={this.onCalcButtonPress}
           id="eight"
         />
         <CalcButton
           label={'9'}
           btnClass="dark hoverable"
-          press={this.onDigitPress}
+          press={this.onCalcButtonPress}
           id="nine"
         />
         <CalcButton
           label={'-'}
           btnClass="light hoverable"
-          press={this.onOperatorPress}
+          press={this.onCalcButtonPress}
           id="subtract"
         />
         <CalcButton
           label={'4'}
           btnClass="dark hoverable"
-          press={this.onDigitPress}
+          press={this.onCalcButtonPress}
           id="four"
         />
         <CalcButton
           label={'5'}
           btnClass="dark hoverable"
-          press={this.onDigitPress}
+          press={this.onCalcButtonPress}
           id="five"
         />
         <CalcButton
           label={'6'}
           btnClass="dark hoverable"
-          press={this.onDigitPress}
+          press={this.onCalcButtonPress}
           id="six"
         />
         <CalcButton
           label={'+'}
           btnClass="light hoverable"
-          press={this.onOperatorPress}
+          press={this.onCalcButtonPress}
           id="add"
         />
         <CalcButton
           label={'1'}
           btnClass="dark hoverable"
-          press={this.onDigitPress}
+          press={this.onCalcButtonPress}
           id="one"
         />
         <CalcButton
           label={'2'}
           btnClass="dark hoverable"
-          press={this.onDigitPress}
+          press={this.onCalcButtonPress}
           id="two"
         />
         <CalcButton
           label={'3'}
           btnClass="dark hoverable"
-          press={this.onDigitPress}
+          press={this.onCalcButtonPress}
           id="three"
         />
         <CalcButton
           label={'='}
           gridArea="equal"
           btnClass="equal hoverable rounded-corner-right"
-          press={this.onEqualPress}
+          press={this.onCalcButtonPress}
           id="equals"
         />
         <CalcButton
           label={'0'}
           gridArea="zero"
           btnClass="dark hoverable rounded-corner-left"
-          press={this.onZeroPress}
+          press={this.onCalcButtonPress}
           id="zero"
         />
         <CalcButton
           label={'.'}
           btnClass="dark hoverable"
-          press={this.onDecimalPress}
+          press={this.onCalcButtonPress}
           id="decimal"
         />
       </div>
